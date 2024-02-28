@@ -74,8 +74,11 @@ class BoomPage(QGroupBox):
         self.machineClient = MachineClient("140.113.213.131")
         self.machineStatus = self.machineClient.connect("MachineA")
 
-        self.t = QTimer()
-        self.t2 = QTimer()
+        self.t = QTimer(self)
+        self.t2 = QTimer(self)
+        self.t.timeout.connect(self.updatePrev)
+        self.t2.timeout.connect(self.shootingSystem)
+
         self.flag = False
 
     def updateEllipseCoords(self, ellipse_coords, midpoint, index):
@@ -353,7 +356,7 @@ class BoomPage(QGroupBox):
             self.machineClient.serve(1, 500)
 
     def shootingSystem(self):
-
+        print('SHOOT')
         #===========================
         # self.predTargetpoint = self.curTargetpoint
         # self.predTargetpoint[0] += self.Xspeed * 2.5 # 2s for callibration
@@ -373,6 +376,7 @@ class BoomPage(QGroupBox):
         #     self.t2.start(200)
         #     return
         #============================
+        self.predTargetpoint = self.curTargetpoint
         output = list(self.camera_widget.getMachineConfig(self.getStartPoint(),self.predTargetpoint)) # get machine configuration
         self.MachineCal = output
         
@@ -420,8 +424,6 @@ class BoomPage(QGroupBox):
         self.output_box5.setText(self.pitchOut)
         self.output_box6.setText(f'Runtime : {round(self.runtime,2)} / {self.interval}')
 
-        
-
     def printOutput(self):
         container = QWidget()
         container_layout = QVBoxLayout()
@@ -452,17 +454,20 @@ class BoomPage(QGroupBox):
 
         container.setLayout(container_layout)
         return container
+    
     def updatePrev(self):
         self.curTargetpoint,self.Rec_Oversize = self.camera_widget.get3DPoint(self.ellipse_coords,self.midpoint) # get current target 3d point
         # if int(self.runtime) % 2 == 0:
-        self.Xspeed = (self.curTargetpoint[0] - self.prevTargetpoint[0])/2 # count x speed
+        self.Xspeed = (self.curTargetpoint[0] - self.prevTargetpoint[0])/1 # count x speed
         self.prevTargetpoint = self.curTargetpoint
         self.PrevRec_Oversize = self.Rec_Oversize
+        print('UPDATED')
+
     def flagtog(self):
         self.flag = not self.flag#new
         self.toggleLive()
+
     def toggleLive(self):
-        self.shootingSystemOn = not self.shootingSystemOn
         self.prevtime = time.time()
         # self.flag = not self.flag#new
 
@@ -470,13 +475,14 @@ class BoomPage(QGroupBox):
         self.prevTargetpoint,self.Rec_Oversize = self.camera_widget.get3DPoint(self.ellipse_coords,self.midpoint)
         # self.updatePrev()
         # #new
-        # if self.flag:
-        #     self.t.timeout.connect(self.toggleLive)
-        #     self.t2.timeout.connect(self.shootingSystem)
-        #     self.t.start(2000)
-        #     self.t2.start(int(self.interval)*1000)
-        # else:
-        #     print('DONE')
+        if not self.flag:
+            self.t.start(1000)
+            self.t2.start(int(self.interval)*1000)
+            self.flag = not self.flag
+        else:
+            self.t.stop()
+            self.t2.stop()
+            self.flag = not self.flag
     
     @pyqtSlot(int, QPixmap)
     def receiveImage(self, camera_id: int, image: QPixmap):
@@ -509,36 +515,36 @@ class BoomPage(QGroupBox):
             #         t.start(2000)
 
             # Check if shooting system is on
-            if self.shootingSystemOn: 
-                # Start counting runtime
-                self.curtime = time.time()
-                diff_time = self.curtime - self.prevtime
-                self.prevtime = self.curtime
-                self.runtime += diff_time
+            # if self.shootingSystemOn: 
+            #     # Start counting runtime
+            #     self.curtime = time.time()
+            #     diff_time = self.curtime - self.prevtime
+            #     self.prevtime = self.curtime
+            #     self.runtime += diff_time
                 
-                self.updateOutput()
+            #     self.updateOutput()
                 
-                self.curTargetpoint,self.Rec_Oversize = self.camera_widget.get3DPoint(self.ellipse_coords,self.midpoint) # get current target 3d point
-                # if int(self.runtime) % 2 == 0:
-                Xspeed = (self.curTargetpoint[0] - self.prevTargetpoint[0])/diff_time # count x speed
-                self.prevTargetpoint = self.curTargetpoint
+            #     self.curTargetpoint,self.Rec_Oversize = self.camera_widget.get3DPoint(self.ellipse_coords,self.midpoint) # get current target 3d point
+            #     # if int(self.runtime) % 2 == 0:
+            #     Xspeed = (self.curTargetpoint[0] - self.prevTargetpoint[0])/diff_time # count x speed
+            #     self.prevTargetpoint = self.curTargetpoint
 
-                # Check if target runtime is achieved
-                if self.runtime > self.interval :
-                    self.predTargetpoint = self.curTargetpoint
-                    # self.predTargetpoint[0] += Xspeed * 4 # 2s for callibration
-                    print(Xspeed)
-                    if self.predTargetpoint[0] < -1.159:
-                       self.predTargetpoint[0] =  -1.159 * 2 - self.predTargetpoint[0]
-                    if self.predTargetpoint[0] > 1.159:
-                       self.predTargetpoint[0] =  1.159 * 2 - self.predTargetpoint[0]
+            #     # Check if target runtime is achieved
+            #     if self.runtime > self.interval :
+            #         self.predTargetpoint = self.curTargetpoint
+            #         # self.predTargetpoint[0] += Xspeed * 4 # 2s for callibration
+            #         print(Xspeed)
+            #         if self.predTargetpoint[0] < -1.159:
+            #            self.predTargetpoint[0] =  -1.159 * 2 - self.predTargetpoint[0]
+            #         if self.predTargetpoint[0] > 1.159:
+            #            self.predTargetpoint[0] =  1.159 * 2 - self.predTargetpoint[0]
 
-                    print(Xspeed)
-                    self.shootingSystem() #Machine Shoot
+            #         print(Xspeed)
+            #         self.shootingSystem() #Machine Shoot
 
-                    if not self.Rec_Oversize and not self.PrevRec_Oversize:
-                        self.runtime = 0           
-                self.PrevRec_Oversize = self.Rec_Oversize
+            #         if not self.Rec_Oversize and not self.PrevRec_Oversize:
+            #             self.runtime = 0           
+            #     self.PrevRec_Oversize = self.Rec_Oversize
             
         self.drawImageSignal.emit(camera_id, image)
 
