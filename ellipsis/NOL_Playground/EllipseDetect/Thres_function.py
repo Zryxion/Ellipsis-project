@@ -69,13 +69,13 @@ def Detect_Ellipse(image):
 
         if(math.dist((x,y),(x1,y1)) < 210):
             
-          min_edge = (int(min(x-r,x1-r)), int(min(y-r,y1-r)))#(x,y) #kiri atas
-          max_edge = (int(max(x+r,x1+r)), int(max(y+r,y1+r)))#(x,y) #kanan bawah
+          min_edge = (int(min(x-r,x1-r)), int(min(y-r,y1-r)))#(x,y) #top left
+          max_edge = (int(max(x+r,x1+r)), int(max(y+r,y1+r)))#(x,y) #bottom right
   
-          min_edge2 = (int(max(x+r,x1+r)), int(min(y-r, y1-r))) #kanan atas
-          max_edge2 = (int(min(x-r,x1-r)), int(max(y+r,y1+r))) #kiri bawah
+          min_edge2 = (int(max(x+r,x1+r)), int(min(y-r, y1-r))) #top right
+          max_edge2 = (int(min(x-r,x1-r)), int(max(y+r,y1+r))) #bottom left
   
-          middle = (int((min_edge[0] + max_edge[0])/2), int((min_edge[1] + min_edge[1])/2)) #tengah
+          middle = (int((min_edge[0] + max_edge[0])/2), int((min_edge[1] + min_edge[1])/2)) #middle point
   
   
         #   cv2.rectangle(output, min_edge, max_edge, (0, 255, 0), 2)
@@ -135,14 +135,41 @@ class DetectThread(QThread):
             self.client.loop_stop()
 
 if __name__ == '__main__':
-    image_name = sys.argv[1]
+    import time
+    vid = cv2.VideoCapture(0)
 
     # "/home/nol/ellipsis/NOL_Playground/snapshot/2023-07-21_11-21-07/2023-07-21_11-21-07_1.png"
     # image_name =  "/home/nol/ellipsis/NOL_Playground/snapshot/2023-05-31_13-09-35/2023-05-31_13-09-35_0.png"
+    while(True): 
+        
+        # Capture the video frame 
+        # by frame 
+        ret, frame = vid.read() 
 
-    image = cv2.imread(image_name)
-    time1 = datetime.now()
-    ellipse_coords, midpoint = Detect_Ellipse(image)
+        # Display the resulting frame 
+        ellipse_coords, midpoint = Detect_Ellipse(frame)
+
+        print(ellipse_coords)
+        frame = cv2.rectangle(frame, ellipse_coords[0], ellipse_coords[2], (255,0,0), 2) 
+        cv2.imshow('frame', frame) 
+        # the 'q' button is set as the 
+        # quitting button you may use any 
+        # desired button of your choice 
+        if cv2.waitKey(1) & 0xFF == ord('q'): 
+            break
+        
+        # time.sleep(1)
+    
+    # After the loop release the cap object 
+    vid.release() 
+    # Destroy all the windows 
+    cv2.destroyAllWindows() 
+
+
+
+    # image = cv2.imread(image_name)
+    # time1 = datetime.now()
+    # ellipse_coords, midpoint = Detect_Ellipse(frame)
 
     #
     # output, midp = Detect_Ellipse(image)
@@ -151,7 +178,7 @@ if __name__ == '__main__':
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
-    time2 = datetime.now()
-    delta = time2 - time1
-    print(delta.total_seconds())
-    print(ellipse_coords)
+    # time2 = datetime.now()
+    # delta = time2 - time1
+    # print(delta.total_seconds())
+    # print(ellipse_coords)
