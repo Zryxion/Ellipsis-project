@@ -38,51 +38,26 @@ def hsv_mask(image):
     return result
 
 def Detect_Ellipse(image):
-    masked = hsv_mask(image)
+    '''
+    Input:
+        image = an image loaded using cv2
 
-    blur = cv2.GaussianBlur(masked, (5,5), 0)
-    sub = masked.astype(int) - blur
-    detected_edges = np.clip(masked.astype(int) + sub*2, a_min = 0, a_max = 255).astype('uint8')
-    detected_edges = cv2.Canny(detected_edges,100,500,apertureSize = kernel_size)
+    Task:
+        - Load YOLO model in this function
+        - Do object detection with your model
+        - Extract the bounding box vertex and the middle point from the prediction
+        - Construct the output( return all value according to the format)
 
-    ellipse = cv2.HoughCircles(detected_edges, cv2.HOUGH_GRADIENT, dp=1, minDist=0.01, param1=150, param2=12, minRadius=0, maxRadius=200)
-
-    output = image.copy()
-    # ensure at least some circles were found
-    if ellipse is not None:
-        # convert the (x, y) coordinates and radius of the circles to integers
-        ellipse = np.round(ellipse[0, :]).astype("int")
-        # loop over the (x, y) coordinates and radius of the circles
-        test = [(x**2 + y**2)**0.5 for (x,y,_) in ellipse]
-
-        #Remove outliers using z-score
-        z = np.abs(stats.zscore(test))
-        vals = np.where(z > 1)
-        rem = np.delete(test,vals[0])
-
-        max_y = max(rem)
-        min_y = min(rem)
-        max_ = test.index(max_y)
-        min_ = test.index(min_y)
-        (x, y, r) = ellipse[min_]
-        (x1, y1, r1) = ellipse[max_]
-
-        if(math.dist((x,y),(x1,y1)) < 210):
-            
-          min_edge = (int(min(x-r,x1-r)), int(min(y-r,y1-r)))#(x,y) #top left
-          max_edge = (int(max(x+r,x1+r)), int(max(y+r,y1+r)))#(x,y) #bottom right
-  
-          min_edge2 = (int(max(x+r,x1+r)), int(min(y-r, y1-r))) #top right
-          max_edge2 = (int(min(x-r,x1-r)), int(max(y+r,y1+r))) #bottom left
-  
-          middle = (int((min_edge[0] + max_edge[0])/2), int((min_edge[1] + min_edge[1])/2)) #middle point
-  
-  
-        #   cv2.rectangle(output, min_edge, max_edge, (0, 255, 0), 2)
-          return [min_edge, min_edge2, max_edge, max_edge2], middle
-            # return ([(494, 622), (622, 622), (622, 754), (494, 754)], (558.0, 622.0))
-    
-    return [(0, 0), (0, 0), (0, 0), (0, 0)], (0.0, 0.0)
+    Description:
+        min_edge = top left point of the bounding box
+        min_edge2 = top right point of the bounding box
+        max_edge = bottom right point of the bounding box
+        max_edge2 = bottom left point of the bounding box
+        middle = middle point of the bounding box
+    Output format:
+        return [min_edge, min_edge2, max_edge, max_edge2], middle
+    '''
+    return [min_edge, min_edge2, max_edge, max_edge2], middle
 
 class DetectThread(QThread):
     def __init__(self, mqtt_broker, camera:CameraReader, detectSignal:pyqtSignal, index):
