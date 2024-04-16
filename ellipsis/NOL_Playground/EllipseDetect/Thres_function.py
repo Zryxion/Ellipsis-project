@@ -43,7 +43,7 @@ def Detect_Ellipse(image):
         image = an image loaded using cv2
 
     Task:
-        - Load YOLO model in this function
+        - Load YOLO model in this file
         - Do object detection with your model
         - Extract the bounding box vertex and the middle point from the prediction
         - Construct the output( return all value according to the format)
